@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WAFCAクイズ</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .question {
+      margin-bottom: 20px;
+    }
+    .options button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .correct {
+      background-color: #d4edda;
+    }
+    .wrong {
+      background-color: #f8d7da;
+    }
+    .fade-in {
+      animation: fadeIn 0.6s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #nickname-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    #nickname-container input {
+      padding: 8px;
+      font-size: 16px;
+      width: 60%;
+      margin-bottom: 10px;
+    }
+    #nickname-container button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .result {
+      text-align: center;
+      margin-top: 30px;
+    }
+    #restart {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #ranking {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #ranking li {
+      list-style: none;
+      padding: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>WAFCAクイズ</h1>
+
+<div id="nickname-container">
+  <p>ニックネームを入力してください：</p>
+  <input type="text" id="nickname" placeholder="例: タロー" />
+  <br />
+  <button onclick="startQuiz()">スタート！</button>
+</div>
+
+<div id="quiz-container" style="display:none;">
+  <div id="progress-text" style="text-align:center; font-weight:bold; margin-bottom:10px;"></div>
+  <div id="question-container" class="fade-in"></div>
+  <div class="options" id="options-container"></div>
+  <div id="feedback" style="font-size: 28px; text-align: center; margin-top: 20px; height: 40px;"></div>
+</div>
+
+<div class="result" id="result-container" style="display:none;">
+  <h2>結果</h2>
+  <p id="score-text"></p>
+  <button id="restart">もう一度やる</button>
+
+  <div id="ranking">
+    <h3>ランキングTOP5</h3>
+    <ul id="ranking-list"></ul>
+  </div>
+
+  <a href="https://wafca.jp/index.html" target="_blank" style="display:block; margin-top:10px; color:#007BFF;">
+    WAFCA公式サイトはこちら
+  </a>
+</div>
+
+<script>
+  const quizData = [
+    {
+      question: "WAFCAの略は何の略でしょう？",
+      options: [
+        "WHEELCHAIRS AND FRIENDSHIP CENTER OF ASIA<br>(訳：アジア車いす交流センター)",
+        "WILD ANIMALS FIGHTING CLUB OF AFRICA<br>(訳：アフリカ野生動物格闘クラブ)",
+        "WASABI AND FISH CAKE ASSOCIATION<br>(訳：わさびとかまぼこ協会)",
+        "WIFI AND FAST CAR ASSOCIATION<br>(訳：Wi-Fiと速い車の協会)"
+      ],
+      answer: 0
+    },
+    {
+      question: "WAFCAが主に関係する分野はどれ？",
+      options: [
+        "映画評論",
+        "福祉",
+        "料理",
+        "動物愛護"
+      ],
+      answer: 1
+    },
+    {
+      question: "WAFCAの目的として正しいものは？",
+      options: [
+        "映画賞を授与すること",
+        "無線通信技術の開発",
+        "障がい者の生活支援と社会参加の促進",
+        "食文化の発展"
+      ],
+      answer: 2
+    }
+  ];
+
+  let currentQuestion = 0;
+  let score = 0;
+  let userName = "";
+
+  const questionContainer = document.getElementById('question-container');
+  const optionsContainer = document.getElementById('options-container');
+  const resultContainer = document.getElementById('result-container');
+  const scoreText = document.getElementById('score-text');
+  const restartBtn = document.getElementById('restart');
+  const quizContainer = document.getElementById('quiz-container');
+  const rankingList = document.getElementById('ranking-list');
+
+  function startQuiz() {
+    const nicknameInput = document.getElementById('nickname');
+    if (nicknameInput.value.trim() === "") {
+      alert("ニックネームを入力してください。");
+      return;
+    }
+    userName = nicknameInput.value.trim();
+    document.getElementById('nickname-container').style.display = 'none';
+    quizContainer.style.display = 'block';
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    const q = quizData[currentQuestion];
+    questionContainer.innerHTML = `Q${currentQuestion + 1}. ${q.question}`;
+    questionContainer.classList.remove('fade-in');
+    void questionContainer.offsetWidth;
+    questionContainer.classList.add('fade-in');
+    optionsContainer.innerHTML = '';
+
+    q.options.forEach((option, index) => {
+      const btn = document.createElement('button');
+      btn.innerHTML = option;
+      btn.addEventListener('click', () => selectAnswer(btn, index));
+      optionsContainer.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(button, selectedIndex) {
+    const correctIndex = quizData[currentQuestion].answer;
+
+    if (selectedIndex === correctIndex) {
+      score++;
+      button.classList.add('correct');
+    } else {
+      button.classList.add('wrong');
+    }
+
+    Array.from(optionsContainer.children).forEach(btn => btn.disabled = true);
+
+    setTimeout(() => {
+      currentQuestion++;
+      if (currentQuestion < quizData.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }, 1000);
+  }
+
+  function showResult() {
+    quizContainer.style.display = 'none';
+    resultContainer.style.display = 'block';
+
+    scoreText.innerHTML = `
+      ${userName}さんのスコアは <strong>${score} / ${quizData.length}</strong> です！
+    `;
+
+    saveRanking(userName, score);
+    displayRanking();
+  }
+
+  function saveRanking(name, score) {
+    const ranking = JSON.parse(localStorage.getItem('wafca_ranking') || '[]');
+    ranking.push({ name, score });
+    ranking.sort((a, b) => b.score - a.score);
+    if (ranking.length > 5) ranking.length = 5;
+    localStorage.setItem('wafca_ranking', JSON.stringify(ranking));
+  }
+
+  function displayRanking() {
+    const ranking = JSON.parse(localStorage.getItem('wafca_ranking') || '[]');
+    rankingList.innerHTML = '';
+    ranking.forEach((entry, i) => {
+      const li = document.createElement('li');
+      li.textContent = `${i + 1}位: ${entry.name}（${entry.score}点）`;
+      rankingList.appendChild(li);
+    });
+  }
+
+  restartBtn.addEventListener('click', () => {
+    currentQuestion = 0;
+    score = 0;
+    resultContainer.style.display = 'none';
+    quizContainer.style.display = 'block';
+    loadQuestion();
+  });
+</script>
+
+</body>
+</html>
